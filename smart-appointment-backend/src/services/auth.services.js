@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../config/db.js";
 
 export async function registerUser({ name, email, password }) {
+
   const [existing] = await db.query(
     "SELECT id FROM users WHERE email = ?",
     [email]
