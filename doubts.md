@@ -1023,3 +1023,167 @@ aws dynamodb list-tables
 - You should see: Appointments
 
 - This confirms IAM Role is working
+
+---
+---
+
+PHASE 5.1 — RUN NODE APP PROPERLY (PM2)
+❓ Why this is needed (very important)
+
+Right now, if:
+
+SSH session closes ❌
+
+EC2 restarts ❌
+
+App crashes ❌
+
+👉 Your server stops
+
+In industry:
+
+Backend must never stop
+---
+WHAT IS PM2 (IN SIMPLE WORDS)
+
+PM2 is:
+
+A process manager
+
+Keeps Node app running
+
+Restarts app if it crashes
+
+Starts app on EC2 reboot
+
+Almost every Node backend on EC2 uses this
+
+---
+STEP 5.1.1 — INSTALL PM2 ON EC2
+
+SSH into EC2:
+
+**npm install -g pm2**
+
+
+Verify:
+
+**pm2 -v**
+🔧 STEP 5.1.2 — START YOUR APP USING PM2
+
+Go to your backend project folder:
+
+cd <your-project-folder>
+
+
+Start app (replace entry file if different):
+
+**pm2 start src/index.js --name smart-appointment-api**
+
+| Part                    | Meaning                              |
+| ----------------------- | ------------------------------------ |
+| `pm2 start`             | Tell PM2 to start managing a process |
+| `src/index.js`          | Entry point of Node app              |
+| `--name`                | Assign a readable name               |
+| `smart-appointment-api` | App identifier inside PM2            |
+
+What PM2 does internally:
+
+Starts Node app in background
+
+Detaches from SSH terminal
+
+Tracks:
+
+CPU usage
+
+Memory usage
+
+Crashes
+
+Registers app inside PM2 registry
+
+Now:
+👉 Closing SSH will NOT stop the app
+
+
+You should see:
+
+App smart-appointment-api started
+
+🔧 STEP 5.1.3 — VERIFY APP STATUS
+pm2 list
+
+
+Status should be:
+
+online
+
+🔧 STEP 5.1.4 — SAVE PM2 CONFIG (VERY IMPORTANT)
+
+This ensures auto-restart after EC2 reboot.
+
+**pm2 save**
+
+Why this is critical:
+
+PM2 stores:
+
+List of running apps
+
+App names
+
+Entry files
+
+Configs
+
+This creates a dump file used on reboot.
+
+Without this:
+❌ Apps won’t restart after EC2 reboot
+
+
+Then:
+
+**pm2 startup**
+
+What this does:
+
+Generates a system startup script
+
+Integrates PM2 with Linux boot process
+
+Tells OS:
+
+“Start PM2 when server boots”
+
+
+PM2 will print a command like:
+
+sudo env PATH=...
+
+
+👉 Copy and run that exact command
+
+🧪 STEP 5.1.5 — TEST PROPERLY
+
+Stop your SSH session
+
+Hit API via Postman:
+
+http://EC2_PUBLIC_IP:3000/api/auth/register
+
+
+✅ If it works → PM2 is doing its job
+
+🧠 INDUSTRY CHECKPOINT (IMPORTANT)
+
+At this point:
+
+App runs independently of SSH ✅
+
+App survives crashes ✅
+
+App restarts on reboot ✅
+
+This is production behavior
