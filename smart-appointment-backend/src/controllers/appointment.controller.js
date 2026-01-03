@@ -4,11 +4,11 @@ import { ddb } from "../config/aws.js";
 const TABLE = "Appointments";
 
 export const bookAppointment = async (req, res) => {
-  const { appointmentTime, doctor, notes } = req.body;
+  const { appointment_datetime, doctor, notes } = req.body;
 
   const item = {
-    userId: req.user.id,
-    appointmentTime,
+    user_id: req.user.id,
+    appointment_datetime,
     doctor,
     notes,
     status: "BOOKED",
