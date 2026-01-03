@@ -7,7 +7,7 @@ export const bookAppointment = async (req, res) => {
   const { appointment_datetime, doctor, notes } = req.body;
   console.log('in contorller req.user',req.user)
   const item = {
-    user_id: req.user.id,
+    user_id: req.user.userId,
     appointment_datetime,
     doctor,
     notes,
@@ -28,7 +28,7 @@ export const getMyAppointments = async (req, res) => {
     TableName: TABLE,
     KeyConditionExpression: "user_id = :u",
     ExpressionAttributeValues: {
-      ":u": req.user.id
+      ":u": req.user.userId
     }
   }));
 
