@@ -1187,3 +1187,502 @@ App survives crashes ✅
 App restarts on reboot ✅
 
 This is production behavior
+
+when you change code just run command **pm2 restart app-name-stored-in-pm2**
+
+---
+---
+STEP 5.4.3 — SET UP APPLICATION LOGGING (PM2 → CloudWatch)
+
+Your Node app logs currently go to:
+
+stdout
+
+stderr
+
+PM2 log files
+
+We’ll forward them to CloudWatch.
+
+CONFIRM IAM PERMISSION (YOU ALREADY HAVE IT)
+
+You already attached:
+**CloudWatchAgentServerPolicy**
+
+✅ This is required
+
+🔧 STEP 5.4.3.2 — INSTALL CLOUDWATCH AGENT ON EC2
+
+SSH into EC2:
+
+sudo yum install amazon-cloudwatch-agent -y
+
+
+(if Amazon Linux)
+
+Verify:
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+
+🔧 STEP 5.4.3.3 — CREATE CLOUDWATCH AGENT CONFIG
+
+Create config file:
+
+sudo nano /opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+
+Paste this (safe + minimal):
+
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/home/ec2-user/.pm2/logs/*.log",
+            "log_group_name": "smart-appointment-app",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+Save & exit.
+
+📌 This tells CloudWatch:
+
+where PM2 logs live
+
+how to group logs
+
+🔧 STEP 5.4.3.4 — START CLOUDWATCH AGENT
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+-a fetch-config \
+-m ec2 \
+-c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json \
+-s
+
+
+Expected:
+
+Successfully fetched the config
+
+🔹 STEP 5.4.4 — VERIFY LOGS IN AWS CONSOLE
+AWS Console → CloudWatch → Logs → Log groups
+
+You should see:
+
+smart-appointment-app
+
+
+Click it → select log stream → see logs like:
+
+server start
+
+API hits
+
+errors
+
+✅ This confirms logging works
+
+🧠 EXAM + INDUSTRY INSIGHT
+
+Metrics are automatic
+
+Logs require CloudWatch Agent
+
+IAM Role is mandatory for logs
+
+CloudWatch ≠ CloudTrail
+
+Cloud Practitioner LOVES these distinctions.
+
+---
+---
+
+WHY PHASE 5.5 EXISTS
+
+Right now:
+
+You have 1 EC2
+
+If it dies → app dies ❌
+
+If traffic increases → app struggles ❌
+
+Industry solution:
+
+Users → Load Balancer → Multiple EC2s
+
+
+This is:
+
+High Availability
+
+Scalability
+
+Fault tolerance
+
+PHASE 5.5 ARCHITECTURE
+
+Client
+  ↓
+Application Load Balancer (ALB)
+  ↓
+Auto Scaling Group
+  ↓
+EC2 instances (Node.js + PM2)
+
+STEP 5.5.1 — LOAD BALANCER TYPES (EXAM-CRITICAL)
+
+| Type    | Layer   | Used for                 |
+| ------- | ------- | ------------------------ |
+| ALB     | Layer 7 | HTTP / HTTPS (REST APIs) |
+| NLB     | Layer 4 | TCP / UDP                |
+| Classic | Legacy  | Avoid                    |
+
+---
+🔹 STEP 5.5.2 — WHAT ALB DOES FOR YOU
+
+Single public endpoint
+
+Health checks
+
+Traffic distribution
+
+SSL termination
+
+Works with Auto Scaling
+
+---
+
+HIGH-LEVEL STEPS (DON’T DO YET)
+
+Create AMI from your EC2
+
+Create Launch Template
+
+Create Target Group
+
+Create ALB
+
+Create Auto Scaling Group
+
+Test load balancing
+
+(Optional) Clean up
+
+We now start STEP BY STEP.
+
+🟢 STEP 1 — CREATE AMI (BASE IMAGE FOR SCALING)
+Why?
+
+ASG launches new EC2s automatically.
+It needs a blueprint → AMI.
+
+🔧 Steps (LATEST AWS UI)
+
+AWS Console → EC2
+
+Left menu → Instances
+
+Select your working EC2
+
+Actions
+
+Image and templates
+
+Create image
+
+Fill details:
+
+Image name:
+
+smart-appointment-ami
+
+
+Image description:
+
+Node.js backend with PM2 and env config
+
+
+✔ Leave everything else default
+✔ Click Create image
+
+⏳ AMI creation takes 2–5 minutes
+
+✅ Verify AMI
+
+EC2 → AMIs
+
+Status must become Available
+
+👉 STOP HERE
+
+Reply:
+
+STEP 1 DONE – AMI AVAILABLE
+
+Only after that we move forward.
+
+STEP 1 DONE – AMI AVAILABLE
+
+Excellent 👍
+We proceed carefully and sequentially, exactly like industry.
+
+🔵 PHASE 5.5 — STEP 2: CREATE LAUNCH TEMPLATE
+🧠 WHY THIS STEP EXISTS
+
+Auto Scaling Group cannot launch EC2 directly.
+It launches from a Launch Template.
+
+Launch Template =
+
+“How should every new EC2 be created?”
+
+It includes:
+
+AMI
+
+Instance type
+
+Security group
+
+IAM role
+
+User data (optional)
+
+🟢 STEP 2.1 — OPEN LAUNCH TEMPLATES
+
+AWS Console → EC2
+
+Left sidebar → Launch Templates
+
+Click Create launch template
+
+🟢 STEP 2.2 — BASIC DETAILS
+
+Fill exactly:
+
+Launch template name
+
+smart-appointment-lt
+
+
+Template version description
+
+Launch template for Node.js backend ASG
+
+
+Check:
+☑️ Provide guidance to help me set up a template that I can use with EC2 Auto Scaling
+
+🟢 STEP 2.3 — AMI SELECTION
+
+Under Application and OS Images
+
+Choose My AMIs
+
+Select:
+
+smart-appointment-ami
+
+🟢 STEP 2.4 — INSTANCE TYPE (FREE-TIER SAFE)
+
+Select:
+
+t2.micro
+
+🟢 STEP 2.5 — KEY PAIR
+
+Choose:
+
+Your existing EC2 key pair
+
+⚠️ Important:
+
+This allows SSH into ASG instances (for debugging)
+
+🟢 STEP 2.6 — NETWORK SETTINGS (IMPORTANT)
+Security Group
+
+Choose:
+
+Same security group you hardened in Phase 5.3
+
+(This SG already allows port 3000)
+
+Subnet
+
+Leave subnet blank
+
+ASG will handle subnet selection later
+
+🟢 STEP 2.7 — IAM INSTANCE PROFILE
+
+Under Advanced details:
+
+IAM instance profile:
+
+SmartAppointment-EC2-Role
+
+
+✅ This ensures:
+
+DynamoDB
+
+S3
+
+SQS
+
+SNS
+
+CloudWatch
+
+all work automatically.
+
+🟢 STEP 2.8 — USER DATA (VERY IMPORTANT)
+
+This ensures new EC2s auto-start your app.
+
+Scroll to Advanced details → User data
+
+Paste this (adjust project path if needed):
+
+#!/bin/bash
+cd /home/ec2-user/cloud-appointment-platform
+npm install
+pm2 resurrect
+
+
+🧠 Why:
+
+Installs deps
+
+Restores PM2 processes automatically
+
+🟢 STEP 2.9 — CREATE TEMPLATE
+
+Click:
+👉 Create launch template
+
+You should see:
+
+Launch template created successfully
+
+✅ STEP 2 SUCCESS CHECK
+
+Go to:
+
+EC2 → Launch Templates
+
+Confirm:
+
+smart-appointment-lt
+
+
+exists.
+
+STEP 3 – CREATE AUTO SCALING GROUP (ASG)
+
+EC2 → Auto Scaling Groups → Create Auto Scaling group
+
+Name: SmartAppointment-ASG
+
+Launch template: select the template you created
+
+Version: Latest
+
+Network:
+
+VPC: same as EC2
+
+Subnets: select at least 2 public subnets
+
+Load balancing:
+
+✔ Attach to an existing load balancer
+
+✔ Choose Application Load Balancer
+
+✔ Create new target group
+
+Type: Instance
+
+Protocol: HTTP
+
+Port: 3000 (or your backend port)
+
+Health checks:
+
+Type: ELB
+
+Grace period: 300 seconds
+
+Group size:
+
+Desired: 2
+
+Minimum: 1
+
+Maximum: 3
+
+Scaling policies:
+
+Target tracking
+
+Metric: Average CPU Utilization
+
+Target value: 50%
+
+Create ASG
+
+STEP 4 – CREATE APPLICATION LOAD BALANCER (ALB)
+
+EC2 → Load Balancers → Create load balancer
+
+Application Load Balancer
+
+Name: SmartAppointment-ALB
+
+Scheme: Internet-facing
+
+IP type: IPv4
+
+Network:
+
+Same VPC
+
+Select same public subnets
+
+Security group:
+
+Allow HTTP (80)
+
+Listener:
+
+HTTP : 80 → Forward to ASG target group
+
+Create ALB
+
+STEP 5 – VERIFY
+
+EC2 → Instances
+
+You should see instances auto-created by ASG
+
+EC2 → Target Groups
+
+Targets should be healthy
+
+Copy ALB DNS name
+
+Open in browser:
+
+http://<ALB-DNS>:3000
+
+
+App should work
