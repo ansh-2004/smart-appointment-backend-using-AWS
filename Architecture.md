@@ -14,15 +14,11 @@ Databases:
 - RDS (MySQL) -> users
 - DynamoDB -> appointments
 
-Async Services:
-- SQS -> appointment events
-- Lambda -> background processing
-- SNS -> notifications
 
 Analytics:
 - Logs stored in S3
 - Athena queries
-- QuickSight dashboards
+- QuickSight dashboards (Later)
 
 Security:
 - IAM Roles (no hardcoded keys)

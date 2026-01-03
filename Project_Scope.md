@@ -9,8 +9,7 @@ Core Features:
 - User registration and login
 - Book appointments
 - View appointment history
-- Admin dashboard for analytics
-- Email notification on booking
+
 
 Non-Functional Requirements:
 - Secure authentication
