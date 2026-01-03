@@ -5,7 +5,7 @@ const TABLE = "Appointments";
 
 export const bookAppointment = async (req, res) => {
   const { appointment_datetime, doctor, notes } = req.body;
-
+  console.log('in contorller req.user',req.user)
   const item = {
     user_id: req.user.id,
     appointment_datetime,
