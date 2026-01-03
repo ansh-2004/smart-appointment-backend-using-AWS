@@ -3,6 +3,8 @@ import cors from 'cors'
 import authRoutes from "./routes/auth.routes.js";
 import appointmentsRoutes from "./routes/appointment.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+
+import uploadRoutes from "./routes/fileupload.routes.js"
 const app = express()
 
 app.use(cors())
@@ -13,6 +15,7 @@ app.use("/api/appointments", appointmentsRoutes);
 
 
 app.use("/api/admin", adminRoutes);
+app.use("/upload",uploadRoutes)
 
 app.get("/health",(req,res)=>{
     res.status(200).json({status : "OK"})
