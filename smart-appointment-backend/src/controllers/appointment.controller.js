@@ -26,7 +26,7 @@ export const bookAppointment = async (req, res) => {
 export const getMyAppointments = async (req, res) => {
   const data = await ddb.send(new QueryCommand({
     TableName: TABLE,
-    KeyConditionExpression: "userId = :u",
+    KeyConditionExpression: "user_id = :u",
     ExpressionAttributeValues: {
       ":u": req.user.id
     }
