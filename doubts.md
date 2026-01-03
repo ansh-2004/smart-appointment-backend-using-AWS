@@ -1686,3 +1686,96 @@ http://<ALB-DNS>:3000
 
 
 App should work
+
+---
+---
+
+PHASE 4 – COMPLETE DATA LAYER (INDUSTRY LEVEL)
+
+Goal of Phase 4
+
+Admin can view all appointments
+
+Query appointments by doctor / date
+
+Design proper DynamoDB access patterns
+
+No hacks, no scans in production paths
+
+🔷 PHASE 4.1 — DATA ACCESS PATTERNS (MOST IMPORTANT STEP)
+
+Industry never starts with tables.
+They start with questions.
+
+Questions our system must answer:
+
+Get appointments for a user ✅ (already done)
+
+Admin: get all appointments
+
+Get appointments by doctor
+
+Get appointments by date
+
+🔷 PHASE 4.2 — DYNAMODB TABLE DESIGN (FINAL)
+Current Table
+Table: Appointments
+PK  : user_id
+SK  : appointmentTime
+
+
+This supports:
+
+✅ User → appointments
+
+But NOT:
+
+Admin queries
+
+Doctor/date queries
+
+🔷 PHASE 4.3 — ADD GLOBAL SECONDARY INDEXES (GSI)
+GSI 1 — Admin View (ALL appointments)
+
+GSI Name: GSI_ALL_APPOINTMENTS
+
+Attribute	Value
+Partition Key	entityType
+Sort Key	appointmentTime
+
+We’ll store:
+
+entityType: "APPOINTMENT"
+
+GSI 2 — Doctor-based queries
+
+GSI Name: GSI_DOCTOR
+
+Attribute	Value
+Partition Key	doctor
+Sort Key	appointmentTime
+🔧 CREATE GSIs (AWS CONSOLE)
+
+DynamoDB → Appointments → Indexes
+
+Create index
+
+Index 1
+
+Name: GSI_ALL_APPOINTMENTS
+
+PK: entityType (String)
+
+SK: appointmentTime (String)
+
+Projection: All
+
+Index 2
+
+Name: GSI_DOCTOR
+
+PK: doctor (String)
+
+SK: appointmentTime (String)
+
+⚠️ Wait until Status = ACTIVE

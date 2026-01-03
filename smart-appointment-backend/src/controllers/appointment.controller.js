@@ -12,6 +12,7 @@ export const bookAppointment = async (req, res) => {
     doctor,
     notes,
     status: "BOOKED",
+    entityType: "APPOINTMENT", //  REQUIRED FOR ADMIN
     createdAt: new Date().toISOString()
   };
 

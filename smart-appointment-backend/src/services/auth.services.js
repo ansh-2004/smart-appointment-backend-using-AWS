@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../config/db.js";
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password,role }) {
 
   const [existing] = await db.query(
     "SELECT id FROM users WHERE email = ?",
@@ -21,7 +21,7 @@ export async function registerUser({ name, email, password }) {
   await db.query(
     `INSERT INTO users (id, name, email, password_hash, role)
      VALUES (?, ?, ?, ?, ?)`,
-    [userId, name, email, passwordHash, "USER"]
+    [userId, name, email, passwordHash, role]
   );
 
   return { userId };
